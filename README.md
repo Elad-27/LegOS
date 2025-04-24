@@ -1,5 +1,5 @@
 # LegOS
-The LegOS project- a Lightweight Extendable General purpose Operating System
+The LegOS project- a Lightweight Extensible General-purpose Operating System
     Copyright (C) 2025  Elad Yaakobi
 
     This program is free software: you can redistribute it and/or modify
