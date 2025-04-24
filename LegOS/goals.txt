@@ -1,0 +1,31 @@
+(I) make the boot *DONE*
+(II) make the linker *DONE*
+(III) make the kernel *IN PROGRESS*
+      {
+        (i) make the terminal driver (i.e Bare_Bones) *DONE*
+	(ii) make \n move one row down *DONE*
+	(iii) make some pretty ASCII art *DONE* (possibly still in progress)
+	(iv) implement basic input/output system with interrupts, IDTs and ISRs. (in progress)
+	(v) make the VGA window / terminal window dynamic (e.g include scrolling / arrows that will will make text reveal and disappear)
+	(vi) make drivers for stuff like: keyboard, etc     
+	(vii) make commands for the terminal (parsing)
+	(viii) file system, e.g memory & file (virtual?) paging
+	(ix) libraries (in progress)
+       }
+(IV) comlete the user space
+       {
+	 (i) make a good gui (background, windows, icons, info, etc)
+	 (ii) implement buttons & mouse clicks 
+	 (iii) essential applications (settings, shell, menu, file explorer, task manager, desktop, text editor)
+	 (iv) non essential applications (desmos, paint, chess, tetris, doom) 
+	 (v) button shortcuts
+}
+(V) name the bieeetch {
+	"HippOS"- The Hip(p) & cool OS 😎 (spells hippos lol) [rating: maybe / pretty cool]
+	"LegOS"- Just a leg...OS (plus I love legos) [rating: n i c e]
+	The Lightweight Extensible General-purpose Operating System - LegOS *DONE* 
+Honorable mentions:
+	"DoritOS"- in honor of Dorit, a person whom I don't know but allowed me to call it Doritos
+	"PotatOS"- as in this OS is like a bag of potatoes, also a portal2 reference
+{
+

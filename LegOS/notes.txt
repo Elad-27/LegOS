@@ -1,0 +1,31 @@
+cross compiler syntax:
+essentially the same as gcc,
+
+i686-elf-gcc -c kernel.c -o kernel.o -std=gnu99 -ffreestanding
+
+"i686-elf-gcc": cross compiler, "-c": the c file flag gets a c file as an input, "-o": the output file flag will specify the output file name, 
+i686 in this context refers to to the i686 micro processor that uses the P6, 6th generation micro-architecture of the x86 intel chips from 1995, that our OS will pretend to work on.
+<side note> it might be virtualy imposible to run my OS on actual machines without using a virtual machine becuase the OS is only made to run on i686 chips <side not> Correction:
+from what I understand newer intel cpu s should be backwards compatible with x86 microarcitecture syntax like that of i686 chips so theoretically it might run without a VM
+but my OS must also have implementation for newer hardware other than flipflops and PS/2 keyboards. but making it would require me to git gud.
+elf is just the executable format like "exe" for windows, it stands for "Executable and Linkable Format".    
+
+"-std": standard library / standard mode set to gnu99 which is just C99(basically support for c language for the compiler) but with gnu extentions, allegadely if not specified it's set to gnu99 by defult but still.
+
+"-ffreestanding": There are two flavors of the C compilation environment: Hosted, where the standard library is available; and freestanding, where only a few headers are usable that contains only defines and types(as defined when I configured the cross- compiler). 
+The hosted environment is meant for user-space programming while freestanding is meant for kernel programming. The hosted environment is default, but you can switch to the freestanding by passing -ffreestanding to your compiler.
+
+bootstrap:
+i686-elf-as boot.s -o boot.o
+same as for the kernel (written in c) but for assembly "-as", ".s"
+
+Linker:
+i686-elf-gcc -T linker.ld -o myos.bin -ffreestanding -O2 -nostdlib boot.o kernel.o -lgcc
+the kernel and boot files must exist before linking them, obvious thing is obvious
+
+
+qemu:
+qemu-system-i386 -kernel myos.bin
+
+(*) OS = 'LegOS' , :. bootloader = 'BootLeg' .
+    please laugh

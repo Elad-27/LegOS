@@ -1,0 +1,11 @@
+(i)Introduction:
+The VGA hardware ("Video Graphics Array") is kind of like the bible; it's pretty old and starting to get less support and out of phase but still widely used, the newer things meant to replace it most often just ended up building on top of it and referencing to / using a modified version of it, it has been a long while since its release so almost all texts meant to explain it are now old themselves and open for interpretation so finding a useful documents is kinda difficult and requires multiple references, and in general it comes with a huge set of rules that are still kind of hard to learn especially because there are hundreds of them and they all interact with each other in different ways in different situations.
+
+Considering all of this, this text is not meant for a full documentation, mainly just the way I used it and some references I found helpful in my research. 
+
+(ii)Functionality:
+firstly depending on what you're trying to achieve you have a choice to make before starting: relaying on the BIOS or not, it comes with many advantages and disadvantages such as extremely simplifying and reducing your work & time by calling BIOS functions instead of manually changing ports on low level (which requires in depth understanding of the hardware to not mess up) but it is also severely limiting since you can only use the BIOS in real mode and real mode is kinda cringe.
+So we are left with no other choice but to make a driver for VGA, learn about the different modes(and throw away 90% of them 'cuz only 2 of them are fucking awesome), and try to maintain our sanity in the process.
+
+I am going to focus on just to VGA modes: text mode and mode 13h, text mode is for displaying text (obviously) and mode 13h is for graphics. 
+
