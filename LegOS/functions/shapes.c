@@ -20,6 +20,17 @@ void draw_rectangle(int x, int y, int width, int height, unsigned short color) {
 	
 }
 
+void rect_out(int x, int y, int width, int height, unsigned short color) {
+	for (int i = 0; i <= width; i ++) {
+		draw_pixel(x + i, y, color);
+		draw_pixel(x + i, y + height, color);
+	}
+
+	for (int i = 0; i < height; i ++) {
+		draw_pixel(x, y + i, color);
+		draw_pixel(x + width, y + i, color);
+	}
+}
 
 void draw_circle(int x, int y, int r, unsigned short color) { // (x - a)^2 + (y - b)^2 = r^2, where the point (a,b) is the center of the circle with a radius - r
 	for (int i = x - r; i <= x + r; i++)

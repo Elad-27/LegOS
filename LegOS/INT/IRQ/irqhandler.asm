@@ -11,10 +11,10 @@ irq_stub_0:
     iret
 
 ;irq1 - keyboard
-irq_stub_1: 
-    push eax
+irq_stub_1:
+    pusha
     call  irq1_handler
-    pop eax
+    popa
     iret
 
 ;irq2 - Cascade (used internally by the two PICs. never raised)
@@ -29,10 +29,12 @@ irq_stub_3:
     hlt
     iret
 
+extern IRQ4_handler
 ;irq4 - COM1 (if enabled)
 irq_stub_4:
-    cli
-    hlt
+    pushad
+    call IRQ4_handler
+    popad
     iret
 
 ;irq5 - LPT2 (if enabled)

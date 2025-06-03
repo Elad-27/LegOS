@@ -30,7 +30,7 @@ void idt_init() {
         vectors[vector] = true;
     }
 
-    for (unsigned char vector = 0; vector < 32; vector++) {
+    for (unsigned char vector = 0; vector < 16; vector++) {
         idt_set_descriptor(vector + 32, irq_stub_table[vector], 0x8E);
         vectors[vector + 32] = true;
     }

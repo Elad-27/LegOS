@@ -411,11 +411,8 @@ int ps2_init() {
     outb(COMMAND_REGISTER, 0x60); //telling the controller we want to modify the configure byte
     outb(DATA_PORT, config);
 
+    
     //Controller Self Test
-    unsigned char bits[8] = {
-        (config >> 0) & 1, (config >> 1) & 1, (config >> 2) & 1, (config >> 3) & 1, 
-        (config >> 4) & 1, (config >> 5) & 1, (config >> 6) & 1, (config >> 7) & 1
-    };    
     Input_buffer_status();
     outb(COMMAND_REGISTER, 0xAA);
     Output_buffer_status();
@@ -427,16 +424,20 @@ int ps2_init() {
             return 1;
         }
     }
-    for (int i = 0; i < 8; i++)
-    {
-        if (bits[i]) {
-            config |= (1 << i);
-        }
-        else
-        {
-            config &= ~(1 << i);
-        }
-    }
+
+    config &= ~(1 << 0);
+    config &= ~(1 << 1);
+    config |= (1 << 2);
+    config &= ~(1 << 3);
+    config &= ~(1 << 4);
+    config &= ~(1 << 6);
+    config &= ~(1 << 7);
+    Input_buffer_status();
+    outb(COMMAND_REGISTER, 0x60);
+    Input_buffer_status();
+    outb(DATA_PORT, config);    
+
+
 
     //Dual channel check
     Input_buffer_status();
@@ -511,7 +512,6 @@ int ps2_init() {
     outb(COMMAND_REGISTER, 0x60); 
     Input_buffer_status();
     outb(DATA_PORT, config); 
-
 
 
     /**
@@ -623,14 +623,41 @@ int ps2_init() {
         }   
     }
 
-    // renabling IRQs
     config |= (1 << 0);
-    //config |= (1 << 1);
+    config |= (1 << 1);
     Input_buffer_status();
-    outb(COMMAND_REGISTER, 0x60); 
+    outb(COMMAND_REGISTER, 0x60);
     Input_buffer_status();
-    outb(DATA_PORT, config);    
+    outb(DATA_PORT, config);        
 
+    Input_buffer_status();
+    outb(COMMAND_REGISTER, 0xD1);
+    Input_buffer_status();
+    outb(DATA_PORT, 0x3);
+
+	Input_buffer_status();
+	outb(DATA_PORT, 0xFE);
+
+/**
+ *_________________________________________________________________________________________________________________________________-
+ * Initializing the keyboard interface
+*/    
+    Input_buffer_status();
+    outb(COMMAND_REGISTER, 0xAE);
+
+    send_port1(0xF0); // set scan code set (2)
+    Output_buffer_status();
+    if (inb(DATA_PORT) == 0xFA) {
+        send_port1(0x2);
+        Output_buffer_status();
+        if (inb(DATA_PORT) != 0xFA) {
+            return 1;
+        }
+    }
+
+    send_port1(0xF4); // Enable scanning
+    inb(DATA_PORT);
+    
     return 0;
 }
 

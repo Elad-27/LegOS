@@ -932,11 +932,6 @@ unsigned char ascii_12x16[128][24] = { // "the quick brown fox jumped over the l
    that char at O(1): 'A' = 65, ascii[65] = <bitmap of 'A'>.
 */
 
-/*
-!important: I done goofed up and treated each bitmap for each char as-is, i.e a char in 10x18 is 27 pixels tall and 8 wide, which is wrong.
-TODO: figure out by how much to offset each bitmap such that it correspons with its axb font
-*Posible fix: turn the whole bit map into one long binary and every [a] bits go down 1 pixel for b pixels and plot the 1s out of the 0s 
-*/
 
 void draw_char(int x, int y, char* format, char c, unsigned short color) {
 	int width = 4;
@@ -945,70 +940,72 @@ void draw_char(int x, int y, char* format, char c, unsigned short color) {
 	int offset = 3;
 	char data = bitmap[0];
 
-	if (strcmp(format, "4x6") == 0) {
-		width = 4;
-		height = 6;
-		bitmap = ascii_4x6[c];
-		offset = 3;
-	}
-	else if (strcmp(format, "5x12") == 0) {
-		width = 6;
-		height = 12;
-		bitmap = ascii_5x12[c];
-		offset = 8;
-	}
-	else if (strcmp(format, "6x8") == 0)
-	{
-		width = 6;
-		height = 8;
-		bitmap = ascii_6x8[c];
-		offset = 6;
-	}
-	else if (strcmp(format, "7x12") == 0)
-	{
-		width = 8;
-		height = 12;
-		bitmap = ascii_7x12[c];
-		offset = 12;
-	}
-	else if (strcmp(format, "8x12") == 0)
-	{
-		width = 8;
-		height = 12;
-		bitmap = ascii_8x12[c];
-		offset = 12;
-	}
-	else if (strcmp(format, "10x18") == 0)
-	{
-		width = 12;
-		height = 18;
-		bitmap = ascii_10x18[c];
-		offset = 27;
-	}
-	else if (strcmp(format, "12x16") == 0)
-	{
-		width = 12;
-		height = 16;
-		bitmap = ascii_12x16[c];
-		offset = 24;
-	}
-
-	int h = 0;
-	int w = 0;
-	for (int i = 0; i < offset; i++)
-	{
-		data = bitmap[i];
-		for (int j = 0; j < 8; j++)
+	if (c >= 32) {
+		if (strcmp(format, "4x6") == 0) {
+			width = 4;
+			height = 6;
+			bitmap = ascii_4x6[c];
+			offset = 3;
+		}
+		else if (strcmp(format, "5x12") == 0) {
+			width = 5;
+			height = 12;
+			bitmap = ascii_5x12[c];
+			offset = 8;
+		}
+		else if (strcmp(format, "6x8") == 0)
 		{
-			if ( (data >> 7 - j) & 1 )
+			width = 6;
+			height = 8;
+			bitmap = ascii_6x8[c];
+			offset = 6;
+		}
+		else if (strcmp(format, "7x12") == 0)
+		{
+			width = 8;
+			height = 12;
+			bitmap = ascii_7x12[c];
+			offset = 12;
+		}
+		else if (strcmp(format, "8x12") == 0)
+		{
+			width = 8;
+			height = 12;
+			bitmap = ascii_8x12[c];
+			offset = 12;
+		}
+		else if (strcmp(format, "10x18") == 0)
+		{
+			width = 10;
+			height = 18;
+			bitmap = ascii_10x18[c];
+			offset = 27;
+		}
+		else if (strcmp(format, "12x16") == 0)
+		{
+			width = 12;
+			height = 16;
+			bitmap = ascii_12x16[c];
+			offset = 24;
+		}
+	
+		int h = 0;
+		int w = 0;
+		for (int i = 0; i < offset; i++)
+		{
+			data = bitmap[i];
+			for (int j = 0; j < 8; j++)
 			{
-				draw_pixel(x + w, y + h, color);
-			}
-			w++;
-			if (w == width)
-			{
-				w = 0;
-				h++;
+				if ((data >> 7 - j) & 1)
+				{
+					draw_pixel(x + w, y + h, color);
+				}
+				w++;
+				if (w == width)
+				{
+					w = 0;
+					h++;
+				}
 			}
 		}
 	}		

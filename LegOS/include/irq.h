@@ -7,5 +7,6 @@
 #include "ps2_keyboard.h"
 //#include "pit.h"
 
+void IRQ4_handler();
 
 #endif

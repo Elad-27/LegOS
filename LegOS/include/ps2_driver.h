@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "in-out.h" 
+#include "picmod.h"
 #include <stdbool.h>
 
 

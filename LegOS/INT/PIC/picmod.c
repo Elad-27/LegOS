@@ -9,8 +9,10 @@
 #define PIC1_DATA   (PIC1+1)
 #define PIC2_COMMAND    PIC2
 #define PIC2_DATA   (PIC2+1)
-
 #define PIC_EOI         0x20 // End-of-interrupt command code
+#define PIC_READ_IRR    0x0a    /* OCW3 irq ready next CMD read */
+#define PIC_READ_ISR    0x0b    /* OCW3 irq service next CMD read */
+
 
 /*
 * One of the most common issued command to the PIC chips - end of interrupt(EOI) command (code 0x20).
@@ -81,9 +83,57 @@ void PIC_remap(int offset1, int offset2)
     outb(PIC1_DATA, 0);
     outb(PIC2_DATA, 0);
 
-    unsigned char mask = inb(0x21);
-    mask &= ~(1 << 1);
-    outb(0x21, mask);
 }
 //Note the presence of io_wait() calls, on older hardware & machines it's mecessary to give the PIC some time to react to commands
 // as they might not be processed quickly
+
+void IRQ_set_mask(uint8_t IRQline) {
+    uint16_t port;
+    uint8_t value;
+
+    if(IRQline < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        IRQline -= 8;
+    }
+    value = inb(port) | (1 << IRQline);
+    outb(port, value);        
+}
+
+void IRQ_clear_mask(uint8_t IRQline) {
+    uint16_t port;
+    uint8_t value;
+
+    if(IRQline < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        IRQline -= 8;
+    }
+    value = inb(port) & ~(1 << IRQline);
+    outb(port, value);        
+}
+
+
+/* Helper func */
+static unsigned short __pic_get_irq_reg(int ocw3)
+{
+    /* OCW3 to PIC CMD to get the register values.  PIC2 is chained, and
+     * represents IRQs 8-15.  PIC1 is IRQs 0-7, with 2 being the chain */
+    outb(PIC1_COMMAND, ocw3);
+    outb(PIC2_COMMAND, ocw3);
+    return (inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND);
+}
+
+/* Returns the combined value of the cascaded PICs irq request register */
+unsigned short pic_get_irr(void)
+{
+    return __pic_get_irq_reg(PIC_READ_IRR);
+}
+
+/* Returns the combined value of the cascaded PICs in-service register */
+unsigned short pic_get_isr(void)
+{
+    return __pic_get_irq_reg(PIC_READ_ISR);
+}

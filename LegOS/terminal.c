@@ -330,6 +330,31 @@ void Cafe_wall() {
 	}	
 }
 
+void wavy_tiles () {
+	unsigned char colors[2] = {vga13h_Yellow, vga13h_Orange1};
+	unsigned char index = 0;
+	for (int y = 0; y < 14; y++) // square grid
+	{
+		for (int x = 0; x < 22; x++)
+		{
+			draw_rectangle(x * 14, y * 14, 14, 14, colors[index % 2]);
+			index++;
+		}
+		index--;	
+	}
+	
+	unsigned char colorsB[4] = {vga13h_Red_Dit, vga13h_White, vga13h_White, vga13h_Red_Dit};
+	index = 0;
+	for (int y = 0; y < 14; y++) // +
+	{
+		for (int x = 1; x < 22; x++)
+		{
+			draw_char(x * 14 - 2, y * 14 - 2, "4x6", '+', colorsB[index % 4]);
+			index++;
+		}	
+	}	
+
+}
 
 
 GdtDescriptor_t gdt_descriptor __attribute__((aligned(8)));
@@ -435,6 +460,125 @@ void prerequisite() {
 
 	//remapping the PIC
 	PIC_remap(0x20, 0x28);
+	IRQ_set_mask(0);
+	IRQ_set_mask(1);
+	IRQ_set_mask(4);
+	IRQ_set_mask(12);
+
+}
+
+void loading_screen() {
+	// progress bar
+	draw_rectangle(106, 120, 106, 21, vga13h_Grey420);
+	fill_circle(106, 130, 10, vga13h_Grey420);
+	fill_circle(213, 130, 10, vga13h_Grey420);
+	
+	// load bar
+	for (int i = 0; i <= 107; i++)
+	{
+		fill_circle(106 + i, 130, 8, vga13h_White);
+		sleep(16);
+		// room to do literally anything other than just make it look like something is actually loading
+	}
+	
+	get_next_scancode(); // empty buffer
+	while (get_next_scancode() == 0) // text glow animation
+	{
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 238);
+		sleep(30);
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 239);
+		sleep(30);
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 240);
+		sleep(30);
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 241);
+		sleep(30);
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 240);
+		sleep(30);
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 239);
+		sleep(30);
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", 238);	
+	}
+	/**
+	 *TODO: implement a way to make this work for the power button and car / house keys as well 
+	*/
+
+	clear_screen();
+	print_logoALT();
+	
+}
+
+void choice() {
+	// display the options
+	draw_string (40, 100, "7x12", "(*) Option 1:", vga13h_Dark_Green);
+	draw_string (40, 120, "7x12", "(*) Option 2:", vga13h_Dark_Green);
+	draw_string (40, 140, "7x12", "(*) Option 3:", vga13h_Dark_Green);
+
+	bool flag = false;
+	unsigned char options[3] = {0, 1, 2};
+	unsigned char offset = 0;
+	while (!flag)
+	{
+		unsigned char keycode = get_next_scancode();
+		unsigned char last = get_last_keycode();
+		if (last == 0x0D) { // tab
+			rect_out(39, 98 + options[offset % 3] * 20, 92, 14, vga13h_Dark_Orange);
+			rect_out(39, 98 + options[(offset + 1) % 3] * 20, 92, 14, vga13h_Black);
+			rect_out(39, 98 + options[(offset + 2) % 3] * 20, 92, 14, vga13h_Black);
+			offset++;
+			sleep(15);
+		}
+		else if (last == 0x16) // 1
+		{
+			rect_out(39, 98, 92, 14, vga13h_Dark_Orange);
+			rect_out(39, 98 + 1 * 20, 92, 14, vga13h_Black);
+			rect_out(39, 98 + 2 * 20, 92, 14, vga13h_Black);
+			sleep(15);
+		}
+		else if (last == 0x1E) // 2
+		{
+			rect_out(39, 98 + 1 * 20, 92, 14, vga13h_Dark_Orange);
+			rect_out(39, 98 + 0 * 20, 92, 14, vga13h_Black);
+			rect_out(39, 98 + 2 * 20, 92, 14, vga13h_Black);
+			sleep(15);
+		}
+		else if (last == 0x26) // 3
+		{
+			rect_out(39, 98 + 2 * 20, 92, 14, vga13h_Dark_Orange);
+			rect_out(39, 98 + 1 * 20, 92, 14, vga13h_Black);
+			rect_out(39, 98 + 0 * 20, 92, 14, vga13h_Black);
+			sleep(15);
+		}
+		else
+		{
+			asm("hlt");
+		}
+		
+	}
+	
+}
+
+void sel_usr() {
+	// window
+	draw_rectangle(70, 10, 160, 170, 234); // border
+	draw_rectangle(75, 15, 150, 160, 240); // bg
+
+	// icon
+	fill_circle(150, 50, 30, 234);
+	fill_circle(150, 38, 10, 240);
+	fill_ellipse(20, 50, 150, 95, 240);
+
+	//text
+	//select user
+	draw_rectangle(100, 80, 100, 30, 234);
+	draw_string(110, 90, "7x12", "select user", vga13h_White);
+	
+	//name:
+	draw_rectangle(80, 115, 130, 20, vga13h_White);
+	draw_string(85, 120, "7x12", "name:", 234);
+
+	//password:
+	draw_rectangle(80, 140, 130, 20, vga13h_White);
+	draw_string(85, 145, "7x12", "password:", 234);
 
 }
 
@@ -442,9 +586,12 @@ void kernel_main(void)
 {
 	//setup
 	prerequisite();
-	ps2_init();
+	unsigned char res = ps2_init();
 	PIT_SetHz(100);
-	
+	IRQ_clear_mask(0);
+	IRQ_clear_mask(1);
+
+
 	/* Initialize terminal interface */
 	//set_vga_text_mode_2();
 	//terminal_initialize();
@@ -460,33 +607,42 @@ void kernel_main(void)
 	set_vga_graphics_mode_2();
 	clear_screen();
 	//palate_display();
-	//clear_screen();
-	//sleep(500);
-	print_logoALT();
-	//timer(10);
-	//draw_string(10, 150, "7x12", ToString(stack_top, " ", 10), vga13h_White);
+	//print_logoALT();
+	//sleep(100);
+	//loading_screen();
+	//choice();
+	//sel_usr();
+	//Cafe_wall();
 	//draw_rectangle(51, 51, 25, 25, 0x2);
 	//pixel_art();
 	//Duo();
 	//font_test();
-	//draw_string(60, 100, "7x12", "a", vga13h_bright_red);
+	//draw_char(60, 100, "10x18", 'A', vga13h_White);
 	//clear_screen();
 
+	//draw_string(10, 150, "7x12", ToString(res, " ", 2), vga13h_White);
 
+	get_next_scancode();
+	int x = 1;
+	int y = 1;
 	while (1)
 	{
-		unsigned char keycode = get_next_keycode();
-		if (keycode != 0) {
-			draw_string(10, 130, "12x16", ToString(keycode, "", 10), vga13h_White);
+		unsigned char keycode = get_next_scancode();
+		unsigned char qwe = get_last_keycode();
+		if (keycode && qwe) {
+			if (parse(qwe) >= 32) {
+				draw_char(7 + x * 7, 10 + y * 12, "7x12", parse(qwe), vga13h_White);
+				x++;
+			}
+		}
+		if(7 * x >= 200) {
+			x = 1;
+			y++;
+		}
+		else
+		{
+			asm("hlt");
 		}
 	}
 
 }
-
-/** 
-*! FIX: need to safely switch between text mode and mode 13h, possible fixes include implementing interrupts and/or improving the set up functions 
-** actually nevermind 13h rules and text mode drools; figured out fonts by myself and I have way more freedom and control than ever before 
-*  TODO: (in 13h) initialize the 256 colours instead of 64, figuring out fonts(*DONE*), and desmos things.
-*  TODO: figure out scrolling.
-*  TODO: initialize interrupts to be availabe in protected mode to include for stuff like other drivers (i.e IDT, ISR, PIC for VGA, Keyboard, etc) *DONE* (still need to figure out handers tho)
-*/

@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 void draw_rectangle(int x, int y, int width, int height, unsigned short color);
+void rect_out(int x, int y, int width, int height, unsigned short color);
 void draw_circle(int x, int y, int r, unsigned short color);
 unsigned char* get_circle_bitmap(int x, int y, int r);
 void print_circle_bitmap(int x, int y, int r, unsigned short color, char* bitmap);
