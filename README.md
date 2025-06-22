@@ -16,3 +16,6 @@ The LegOS project- a Lightweight Extensible General-purpose Operating System
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 email: contact.elad27.dev@gmail.com
+
+To use LegOS you first need to create a directory called LegOS, then download the contents of this project into that directory, next use the scripts make.sh to compile the source files and run.sh to emulate the OS with QEMU. 
+
