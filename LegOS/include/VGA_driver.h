@@ -302,6 +302,7 @@ enum vga13h_color {
 
 // Function prototypes
 void draw_pixel(int x, int y, unsigned short color);
+unsigned char read_pixel(int x, int y);
 
 void write_regs(unsigned char *reg);
 void set_vga_graphics_mode_2();
@@ -318,6 +319,7 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
 // helper functions
 static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
+void clear_screen();
 
 
 #endif //VGA_DRIVER_H

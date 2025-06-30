@@ -1,6 +1,7 @@
 #include "../../include/pit.h"
 
-
+volatile unsigned int timer_ticks;
+unsigned int target_a;
 
 void PIT_SetHz(unsigned int freq) {
     unsigned short divisor = PIT_FREQUENCY / freq;
@@ -37,3 +38,6 @@ void timer(int seconds) {
 	}
 } 
 
+unsigned int GetTicks() {
+    return timer_ticks;
+}

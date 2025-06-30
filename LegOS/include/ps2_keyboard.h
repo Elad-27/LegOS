@@ -23,6 +23,8 @@ typedef struct key_event
 {
     unsigned char make_code;
     unsigned char break_code;    
+    unsigned char extended_make_code;
+    unsigned char extended_break_code;
 }key_event_t;
 
 
@@ -32,6 +34,12 @@ unsigned char get_last_scancode();
 void KeyEvent();
 unsigned char get_last_keycode();
 unsigned char GetStackVolume();
-unsigned char parse(unsigned char keycode);
+unsigned char ScancodeToAscii(unsigned char keycode);
+unsigned char GetMakeCode();
+unsigned char GetBreakCode();
+unsigned char GetExtMakeCode();
+unsigned char GetExtBreakCode();
+unsigned char GetKeyboardTail();
+unsigned char CheckFlags();
 
 #endif

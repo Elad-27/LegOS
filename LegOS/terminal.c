@@ -8,7 +8,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -24,8 +23,10 @@
 #include "include/gdt.h"
 #include "include/lidt.h"
 #include "include/ps2_driver.h"
-//#include "include/pit.h"
 #include "include/ps2_keyboard.h"
+#include "include/stdleg.h"
+#include "include/memleg.h"
+
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -38,6 +39,7 @@
 #endif
 
 extern unsigned int stack_top;
+
 
 /* 
 	Hahaha big logo go brrrrr 
@@ -114,20 +116,6 @@ void print_logoALT() {
 }
 
 
-void clear_screen() { // technically doesn't really clear the screen so much as covering it in black.
-	for (int x = 0; x < 320; x++)
-	{
-		for (int y = 0; y < 200; y++)
-		{
-			draw_pixel(x, y, 0x00);
-		}
-		
-	}
-	
-}  
-
-
-
 void pixel_art() {
 	for (int i = 0; i < 3; i++)
 	{
@@ -147,8 +135,8 @@ void pixel_art() {
 		draw_circle(100, 100, i * 10, i);
 	}
 
-	x_line(20, 0x0);
-	y_line(20, 0x0);	
+	x_line(0, 200, 20, 0x0);
+	y_line(0, 320, 20, 0x0);	
 	
 }
 
@@ -157,18 +145,22 @@ void pixel_art() {
 *	*Done*, although, each rgb value of each of the 256 available colors can only be smaller or equal to 63, ergo it's worthless and I now need to implement SVGA...
 */
 void palate_display() {
+	draw_rectangle(5, 5, 170, 170, 241);
 	unsigned short color = 0;
-	int width = 20;
-	int height = 12.5;
+	int width = 10;
+	int height = 10;
 	for (int y = 0; y < 16; y++)
 	{
+		y_line(10, 171, y * height + 10, 238);
 		for (int x = 0; x < 16; x++)
 		{	
-			draw_rectangle(x * width, y * height, width, height, color);
+			x_line(10, 171, x * width + 10, 238);
+			draw_rectangle(x * width + 11, y * height + 11, width, height, color);
 			color++;
 		}
-		
 	}
+	y_line(10, 171, 16 * height + 10, 238);
+	x_line(10, 171, 16 * width + 10, 238);
 	
 }
 
@@ -324,7 +316,7 @@ void Cafe_wall() {
 		{
 			draw_rectangle(x * 14 + (offset % 2) * 4, y * 14 + 1, 14, 14 ,color[index % 2]);
 			index++;
-			y_line(y * 14 + 1, 236);
+			y_line(0, 320, y * 14 + 1, 236);
 		}	
 		offset++;
 	}	
@@ -477,33 +469,31 @@ void loading_screen() {
 	for (int i = 0; i <= 107; i++)
 	{
 		fill_circle(106 + i, 130, 8, vga13h_White);
-		sleep(16);
+		sleep(Math_Sin(i % 7) * 10 - 3);
 		// room to do literally anything other than just make it look like something is actually loading
 	}
+
+    unsigned char colors[6] = {238, 239, 240, 241, 240, 239};
+    unsigned char index = 0;
+    unsigned int target = GetTicks() + 30;
 	
 	get_next_scancode(); // empty buffer
 	while (get_next_scancode() == 0) // text glow animation
 	{
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 238);
-		sleep(30);
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 239);
-		sleep(30);
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 240);
-		sleep(30);
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 241);
-		sleep(30);
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 240);
-		sleep(30);
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 239);
-		sleep(30);
-		draw_string(80, 150, "7x12", "Press any key to continue . . .", 238);	
+		draw_string(80, 150, "7x12", "Press any key to continue . . .", colors[index % 6]);
+        if (GetTicks() >= target)
+        {
+			draw_string(80, 150, "7x12", "Press any key to continue . . .", colors[index % 6]);
+            index++;
+            target = GetTicks() + 30;
+        }
+		asm("hlt");
 	}
 	/**
 	 *TODO: implement a way to make this work for the power button and car / house keys as well 
 	*/
 
 	clear_screen();
-	print_logoALT();
 	
 }
 
@@ -557,10 +547,13 @@ void choice() {
 	
 }
 
+user_t user;
+
 void sel_usr() {
+//visual:	
 	// window
-	draw_rectangle(70, 10, 160, 170, 234); // border
-	draw_rectangle(75, 15, 150, 160, 240); // bg
+	draw_rectangle(70, 10, 160, 173, 234); // border
+	draw_rectangle(75, 15, 150, 163, 240); // bg
 
 	// icon
 	fill_circle(150, 50, 30, 234);
@@ -569,75 +562,137 @@ void sel_usr() {
 
 	//text
 	//select user
-	draw_rectangle(100, 80, 100, 30, 234);
-	draw_string(110, 90, "7x12", "select user", vga13h_White);
+	draw_rectangle(100, 75, 100, 20, 234);
+	draw_string(110, 80, "7x12", "select user", vga13h_White);
 	
 	//name:
-	draw_rectangle(80, 115, 130, 20, vga13h_White);
-	draw_string(85, 120, "7x12", "name:", 234);
+	draw_rectangle(78, 112, 134, 24, 234);
+	draw_rectangle(80, 114, 130, 20, vga13h_White);
+	draw_rectangle(82, 97, 40, 17, 234);
+	draw_string(85, 99, "7x12", "name:", vga13h_White);
 
 	//password:
-	draw_rectangle(80, 140, 130, 20, vga13h_White);
-	draw_string(85, 145, "7x12", "password:", 234);
+	draw_rectangle(78, 152, 134, 24, 234);
+	draw_rectangle(80, 154, 130, 20, vga13h_White);
+	draw_rectangle(82, 138, 70, 16, 234);
+	draw_string(85, 140, "7x12", "password:", vga13h_White);
 
-}
+//functionality:	
+	window_t text_box = {
+		20,
+		130,
+		3,
+		234,
+		vga13h_White
+	};		
+	unsigned char index = 0;
+	NewWindow(82, 120 + (index % 2) * 38, text_box);
 
-void kernel_main(void) 
-{
-	//setup
-	prerequisite();
-	unsigned char res = ps2_init();
-	PIT_SetHz(100);
-	IRQ_clear_mask(0);
-	IRQ_clear_mask(1);
-
-
-	/* Initialize terminal interface */
-	//set_vga_text_mode_2();
-	//terminal_initialize();
-	//
-	//terminal_writestring("--------------------------------------------------------------------------------\n");
-	//terminal_writestring("															 Hello, World!\n");
-	//terminal_writestring("														Welcome to the LegOS :)\n");
-	//terminal_writestring("--------------------------------------------------------------------------------\n");
-	//terminal_writestring("test A\r");
-	//terminal_writestring("test B\n");
-	
-	// testing vga mode 13h: so far switches from text mode successfully and displaying pixels correctly
-	set_vga_graphics_mode_2();
-	clear_screen();
-	//palate_display();
-	//print_logoALT();
-	//sleep(100);
-	//loading_screen();
-	//choice();
-	//sel_usr();
-	//Cafe_wall();
-	//draw_rectangle(51, 51, 25, 25, 0x2);
-	//pixel_art();
-	//Duo();
-	//font_test();
-	//draw_char(60, 100, "10x18", 'A', vga13h_White);
-	//clear_screen();
-
-	//draw_string(10, 150, "7x12", ToString(res, " ", 2), vga13h_White);
-
-	get_next_scancode();
-	int x = 1;
-	int y = 1;
-	while (1)
+	unsigned char data = GetChar();
+	while (data != '\n')
 	{
-		unsigned char keycode = get_next_scancode();
-		unsigned char qwe = get_last_keycode();
-		if (keycode && qwe) {
-			if (parse(qwe) >= 32) {
-				draw_char(7 + x * 7, 10 + y * 12, "7x12", parse(qwe), vga13h_White);
-				x++;
+		data = GetChar();
+		if (data == '\t') {
+			draw_char(82, 120 + (index % 2) * 38, "7x12", '_', text_box.background_color);
+			index++;
+			NewWindow(82, 120 + (index % 2) * 38, text_box);
+			draw_char(82, 120 + (index % 2) * 38, "7x12", '_', text_box.text_color);
+		}	
+		else
+		{
+			asm("hlt");
+		}	
+	}	
+	draw_rectangle(80, 114, 130, 20, vga13h_White);
+	draw_rectangle(80, 154, 130, 20, vga13h_White);
+
+	unsigned char* username = "";
+	unsigned char* password = "";
+	int namelen = 0;
+	int passlen = 0;
+	for (unsigned char i = 0; i < 2; i++)
+	{
+		if (index % 2 == 0) {
+			username = Read_Line();	
+			namelen = strlen(username) + 1;
+			user.username = kmalloc(namelen);
+			unsigned char* temp = user.username;
+			for (int i = 0; i <= namelen; i++)
+			{
+				*user.username = *username;
+				user.username++;
+				username++;
 			}
+			*user.username++ = '\0';
+			user.username = temp;
+			SetUsrName(user.username);
 		}
-		if(7 * x >= 200) {
-			x = 1;
-			y++;
+
+		if (index % 2 != 0) {
+			password = Read_Line();	
+			passlen = strlen(password) + 1;
+			user.password = kmalloc(passlen);
+			unsigned char* temp2 = user.password;
+			for (int i = 0; i <= passlen; i++)
+			{
+				*user.password = *password;
+				user.password++;
+				password++;
+			}
+			*user.password++ = '\0';
+			user.password = temp2;
+			SetUsrPass(password);
+		}
+
+		index ++;
+		NewWindow(82, 120 + (index % 2) * 38, text_box);
+	}
+
+	ReturnDefaultWindow();
+	print_logoALT();
+	set_font(6);
+	set_color(vga13h_Neon_Green);
+	write_string("\n\n\n\n\nWelcome ");
+	write_string(user.username);
+	write_string("!");
+	sleep(300);
+	textwindow_init();
+}	
+// 1 for background and text, 0 for user and path
+void color_setting_gui(int switcher) {
+	palate_display();
+
+	draw_rectangle(177, 65, 46, 20, 236);
+	draw_rectangle(179, 67, 42, 18, 240);
+	draw_string(179, 68, "6x8", "select:", vga13h_White);
+
+	draw_rectangle(175, 80, 120, 80, 236);
+	draw_rectangle(177, 82, 116, 76, 240);
+
+	draw_rectangle(180, 85, 110, 33, 236);
+	draw_rectangle(180, 123, 110, 33, 236);
+	if (switcher == 1)
+	{
+		draw_string(216, 95, "8x12", "text", vga13h_White);
+		draw_string(193, 133, "8x12", "background", vga13h_White);
+	}
+	if (switcher == 0)
+	{
+		draw_string(216, 95, "8x12", "user", vga13h_White);
+		draw_string(216, 133, "8x12", "path", vga13h_White);
+	}
+	
+
+	unsigned char index = 0;
+	unsigned char keycode = get_last_keycode();
+	while (keycode != '\n') // enter
+	{
+		keycode = GetChar();
+
+		if(keycode == '\t') { // tab
+			rect_out(179, 84 + 38 * (index % 2), 111, 34, vga13h_Dark_Orange);	
+			rect_out(179, 84 + 38 * ((index+1) % 2), 111, 34, 240);
+			index++;	
 		}
 		else
 		{
@@ -645,4 +700,284 @@ void kernel_main(void)
 		}
 	}
 
+	unsigned char offset_x = 0;
+	unsigned char offset_y = 0; 
+	rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, vga13h_Dark_Orange); // 16 x 16 = 256 colors
+
+	unsigned char sel_color = read_pixel(11 + 10 * (offset_x % 16) + 4, 11 + 10 * (offset_y % 16) + 4);
+	
+	for (int i = 0; i < 2; i++)
+	{
+		KeyEvent();
+		keycode = GetExtMakeCode();	
+		unsigned char exit = GetMakeCode();
+		while (ScancodeToAscii(exit) != '\n') // enter
+		{
+			KeyEvent();
+			keycode = GetExtMakeCode();
+			exit = GetMakeCode();
+			if (keycode)
+			{
+				if (keycode == 0x75 && (offset_y % 16) > 0) // up arrow
+				{
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, 238);
+					offset_y--;
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, vga13h_Dark_Orange);
+					sel_color = read_pixel(11 + 10 * (offset_x % 16) + 4, 11 + 10 * (offset_y % 16) + 4);
+				}
+				
+				else if (keycode == 0x72 && (offset_y % 16) < 16) // down arrow
+				{
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, 238);
+					offset_y++;
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, vga13h_Dark_Orange);
+					sel_color = read_pixel(11 + 10 * (offset_x % 16) + 4, 11 + 10 * (offset_y % 16) + 4);
+				}
+				
+				else if (keycode == 0x74 && (offset_x % 16) < 16) // right arrow
+				{
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, 238);
+					offset_x++;
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, vga13h_Dark_Orange);
+					sel_color = read_pixel(11 + 10 * (offset_x % 16) + 4, 11 + 10 * (offset_y % 16) + 4);
+				}
+				
+				else if (keycode == 0x6b && (offset_x % 16) > 0) // left arrow
+				{
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, 238);
+					offset_x--;
+					rect_out(11 + 10 * (offset_x % 16), 11 + 10 * (offset_y % 16), 9, 9, vga13h_Dark_Orange);
+					sel_color = read_pixel(11 + 10 * (offset_x % 16) + 4, 11 + 10 * (offset_y % 16) + 4);
+				}
+
+				if (switcher == 1)
+				{
+					if (index % 2 == 1)
+					{
+						draw_string(216, 95, "8x12", "text", sel_color);
+						draw_string(193, 133, "8x12", "background", sel_color);
+					}
+					else if (index % 2 == 0)
+					{
+						draw_rectangle(180, 123, 110, 33, sel_color);
+						draw_string(193, 133, "8x12", "background", GetColor());
+						draw_rectangle(180, 85, 110, 33, sel_color);
+						draw_string(216, 95, "8x12", "text", GetColor());
+					}
+				}
+
+				if (switcher == 0)
+				{
+					if (index % 2 == 1)
+					{
+						draw_string(216, 95, "8x12", "user", sel_color);
+						draw_string(216, 133, "8x12", "path", sel_color);
+					}
+					else if (index % 2 == 0)
+					{
+						draw_rectangle(180, 123, 110, 33, sel_color);
+						draw_string(216, 133, "8x12", "path", GetColor());
+						draw_rectangle(180, 85, 110, 33, sel_color);
+						draw_string(216, 95, "8x12", "user", GetColor());
+					}
+				}				
+			}
+			else
+			{
+				asm("hlt");
+			}
+		}	
+		if (index % 2 == 1)
+		{
+			set_color(sel_color);
+		}
+
+		if (index % 2 == 0)
+		{
+			set_BGcolor(sel_color);
+		}
+		
+		rect_out(179, 84 + 38 * (index % 2), 111, 34, vga13h_Dark_Orange);	
+		rect_out(179, 84 + 38 * ((index+1) % 2), 111, 34, 240);
+		index++;
+	}
+	clear_window();
+}
+
+void quit() {
+	clear_screen();
+	rect_out(168, 28, 15 * 8 + 2, 14, vga13h_White);
+	draw_line(168, 24, 168, 46, vga13h_White);
+	draw_line(168, 28, 168, 42, vga13h_Black);
+	draw_line(168, 24, 157, 35, vga13h_White);
+	draw_line(157, 35, 168, 46, vga13h_White);
+	draw_string(170, 30, "8x12", "To Be Continued", vga13h_White);
+	draw_line(294, 28, 294, 42, vga13h_White);
+	draw_line(294, 42, 298, 42, vga13h_White);
+	draw_line(294, 28, 298, 42, vga13h_White);
+	draw_line(298, 28, 304, 42, vga13h_White);
+	draw_line(304, 28, 304, 42, vga13h_White);
+	draw_line(298, 28, 304, 28, vga13h_White);
+	draw_line(306, 28, 306, 42, vga13h_White);
+	draw_line(306, 28, 310, 28, vga13h_White);
+	draw_line(310, 28, 306, 42, vga13h_White);
+
+
+	draw_string(120, 67, "6x8", "I wouldn't leave if I were you.\n\t\t\t\t\t\t\t\t\t\tDOS is much worse.", vga13h_White);
+
+	draw_string(130, 180, "8x12", "SEE YOU SPACE COWBOY ...", vga13h_White);
+
+	draw_string(0, 10, "7x12", "mischief managed", vga13h_White);
+
+	draw_string(0, 160, "6x8", "sleep mode activaited", vga13h_White);
+
+	draw_string(30, 130, "6x8", "So long, and thanks for all the fish", vga13h_White);
+
+	draw_string(100, 100, "12x16", "Goodbye :)", vga13h_White);
+
+	draw_string(50, 50, "8x12", "return 0;", vga13h_White);
+
+	sleep(300);
+	outb(0xF4, 0x00);
+}
+
+void note() {
+	window_t note = {
+		200,
+		320,
+		3,
+		vga13h_Dark_Blue,
+		vga13h_White
+	};
+	NewWindow(0, 0, note);
+	clear_window();
+	x_line(0, 200, 300, vga13h_Red1);
+	for (int y = 1; y < 14; y++)
+	{
+		y_line(0, 320, y * 14 - 1, vga13h_Red1);
+		fill_circle(310, y * 14 - 7, 4, 234);
+	}
+	
+	while(1) {
+		if (!strcmp(Read_Line(), "Do you know anything about the chamber of secrets?")) {
+			write_string("Yes\n");
+			if (!strcmp(Read_Line(), "Can you tell me?"))
+			{
+				write_string("No...\nBut I can show you\n");
+			}			
+		} 
+		if (!strcmp(Read_Line(), "exit")) {
+			break;
+		} 
+	}
+}
+
+void whoami() {
+	BumpX(-(strlen(user.username) + 4) * GetKeyWidth());
+	write_string(user.username);
+	write_string("\n");
+	BumpX((strlen(user.username) + 4) * GetKeyWidth());
+
+}
+
+void terminal() {
+	unsigned char user_color = vga13h_Blue_Sky;
+	unsigned char path_color = vga13h_White; 
+	unsigned char text_temp = vga13h_White;
+	unsigned char bg_temp = 234;
+	set_BGcolor(bg_temp);
+	clear_window();
+	set_color(user_color);
+	write_string(user.username);
+	set_color(path_color);
+	write_string(":/$");
+	set_color(text_temp);
+
+	while (1)
+	{
+		BumpX((strlen(user.username) + 4) * GetKeyWidth());
+		unsigned char* command = Read_Line(); 
+		if (strcmp(command, "\n"))
+		{
+			if (!strcmp(command, "clear")) {
+				clear_window();
+			}
+			else if (!strcmp(command, "color"))
+			{
+				color_setting_gui(1);
+				text_temp = GetColor();
+				bg_temp = GetBGColor();
+			}
+			else if (!strcmp(command, "prompt"))
+			{
+				color_setting_gui(0);
+				user_color = GetColor();
+				path_color = GetBGColor();
+
+				set_color(text_temp);
+				set_BGcolor(bg_temp);
+				clear_window();
+			}
+			else if (!strcmp(command, "note"))
+			{
+				note();
+				textwindow_init();		
+				BumpX((strlen(user.username) + 4) * GetKeyWidth());		
+				set_BGcolor(bg_temp);
+				set_color(text_temp);
+				clear_window();
+			}
+			else if (!strcmp(command, "whoami"))
+			{
+				whoami();
+			}
+			else if (!strcmp(command, "calculator")) {
+
+			}
+			else if (!strcmp(command, "quit")) {
+				quit();
+			}
+			else if (!strcmp(command, "help"))
+			{
+				BumpX(-(strlen(user.username) + 4) * GetKeyWidth());
+				write_string("'clear'- clears the screen\n'color'- lets you choose the text and background\ncolors\n'prompt'- change the color of the username and path \non the prompt\n");
+				write_string("'note'- opens the text editor\n'whoami'- prints the current username\n'calculator'- opens the calculator\n'quit'- turns off the OS\n'help'- lists the available commands\n");
+				BumpX((strlen(user.username) + 4) * GetKeyWidth());
+			}
+			
+			else
+			{
+				BumpX(-(strlen(user.username) + 4) * GetKeyWidth());
+				write_string("command not found: '");
+				write_string(command);
+				write_string("'\n");
+				BumpX((strlen(user.username) + 4) * GetKeyWidth());
+			}
+		}
+		
+		BumpX(-(strlen(user.username) + 4) * GetKeyWidth());
+		set_color(user_color);
+		write_string(user.username);
+		set_color(path_color);
+		write_string(":/$");
+		set_color(text_temp);
+	}
+}
+
+void kernel_main(void) 
+{
+	//setup
+	prerequisite();
+	ps2_init();
+	PIT_SetHz(100);
+	IRQ_clear_mask(0);
+	IRQ_clear_mask(1);
+
+	set_vga_graphics_mode_2();
+	clear_screen();
+	textwindow_init();
+	loading_screen();
+	sel_usr();
+	terminal();
+	
 }

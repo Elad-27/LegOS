@@ -1,5 +1,6 @@
 #include "../include/stringlib.h"
 #include "../include/fonts.h"
+#include "../include/mathlib.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -8,6 +9,7 @@ int strlen(const char* str) {
     int len = 0;
     while(*str){
         len++;
+        *str++;
     }
     return len;
 }
@@ -58,4 +60,50 @@ char* ToString(int value, char* result, int base) {
         *ptr1++ = tmp_char;
     }
     return result;
+}
+
+// converts a floating point / double number to a string
+char* ToStringFloat(double value, char* result, int decimalplaces) {
+    decimalplaces = decimalplaces % 10;
+    char* ptr = result;
+    char* ptr1 = result;
+    int temp = powerof(10, decimalplaces) * value;
+
+    unsigned char negative = 0;
+    if (temp * 10 < 0)
+    {
+        negative = 1;
+    }
+    
+    for (int i = 0; i < decimalplaces; i++)
+    {
+        *ptr++ = '0' + abs(temp) % 10;
+        temp /= 10;
+    }
+    *ptr++ = '.';
+    while (abs(temp) >= 10)
+    {
+        *ptr++ = '0' + abs(temp) % 10;
+        temp /= 10;
+    }
+    *ptr++ = '0' + abs(temp);
+    if (negative) *ptr++ = '-';
+    *ptr-- = '\0';
+    
+    while(ptr1 < ptr) {
+        temp = *ptr;
+        *ptr--= *ptr1;
+        *ptr1++ = temp;
+    }
+
+    return result;
+}
+
+//add a char to a string
+unsigned char* strcat_c(char *str, char c) {
+    for (;*str;str++);
+    *str++ = c; 
+    *str++ = '\0';
+
+    return str;
 }

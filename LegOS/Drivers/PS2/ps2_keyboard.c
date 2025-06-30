@@ -182,6 +182,13 @@ void irq1_handler(void) {
         buffer_head = next;
     }
 
+    if (sp - keyboard_stack < KEYBOARD_BUFFER_SIZE) {
+        push(sp, scancode);
+    }
+    else if (sp - keyboard_stack == KEYBOARD_BUFFER_SIZE - 1) {
+        Empty_stack(sp, keyboard_stack);
+    }                    
+
     PIC_sendEOI(1);
 }
 
@@ -189,24 +196,22 @@ unsigned char get_next_scancode() {
     if (buffer_head == buffer_tail) {
         return 0; // no key
     }
-
+    
     unsigned char scancode = keyboard_buffer[buffer_tail];
     buffer_tail = (buffer_tail + 1) % KEYBOARD_BUFFER_SIZE;
-
-    if (sp - keyboard_stack < KEYBOARD_BUFFER_SIZE) {
-        push(sp, scancode);
-    }
-    else if (sp - keyboard_stack == KEYBOARD_BUFFER_SIZE - 1) {
-        Empty_stack(keyboard_stack, sp);
-    }                
 
     return scancode;
 }
 
 unsigned char get_last_scancode() {
-    if (sp - keyboard_stack > 0 && sp - keyboard_stack < KEYBOARD_BUFFER_SIZE - 1) {
+    if(GetStackVolume() == KEYBOARD_BUFFER_SIZE - 1) {
+        Empty_stack(sp, keyboard_stack);
+    }
+
+    if (GetStackVolume() > 0 && GetStackVolume() < KEYBOARD_BUFFER_SIZE - 1) {
         return pop(sp);
     }
+
 
     return 0;
 }
@@ -214,25 +219,43 @@ unsigned char get_last_scancode() {
 void KeyEvent() {
     key_code.make_code = 0;
     key_code.break_code = 0;
+    key_code.extended_make_code = 0;
+    key_code.extended_break_code = 0;
 
-    unsigned char data_a = get_last_scancode(); // first scancode from the stack
-    unsigned char data_b = get_last_scancode(); // second scancode
+    unsigned char data_a = get_last_scancode(); // last scancode from the stack
+    unsigned char data_b = get_last_scancode(); // second scancode before the last
+    unsigned char data_c = get_last_scancode(); // third
 
     // return the scancodes back to the stack to maintain order
-    push(sp, data_b); 
-    push(sp, data_a);   
+    // push(sp, data_c);
+    // push(sp, data_b); 
+    // push(sp, data_a);   
 
-    if (data_b == 0xE0) { // in case of extended code- 0xE0
-        if (data_a != 0xF0) { // there isn't anything to do if it's a break code- 0xF0 concidering the given order
-            key_code.make_code = data_a;
+    if (data_c)
+    {
+        if (data_c == 0xE0)
+        {
+            if (data_b == 0xF0)
+            {
+                key_code.extended_break_code = data_a;
+            }
+        }
+    }
+    
+    if (data_b)
+    {
+        if (data_b == 0xE0) { // in case of extended code- 0xE0
+            if (data_a != 0xF0) { // there isn't anything to do if it's a break code- 0xF0 concidering the given order
+                key_code.extended_make_code = data_a;
+            }
+        }
+    
+        if (data_b == 0xF0) { // in case of breakcode
+            key_code.break_code = data_a;
         }
     }
 
-    if (data_b == 0xF0) { // in case of breakcode
-        key_code.break_code = data_a;
-    }
-
-    if (data_b != 0xF0 && data_a != 0 && data_a != 0xE0 && data_a != 0xF0) { // we want the last *keycode* not the last scancode, i.e no prefix code like 0xF0
+    if (data_b != 0xF0 && data_b != 0xE0 && data_a != 0 && data_a != 0xE0 && data_a != 0xF0) { // we want the last *keycode* not the last scancode, i.e no prefix code like 0xF0
         key_code.make_code = data_a;  
     }
 
@@ -267,16 +290,16 @@ void KeyEvent() {
     if (key_code.make_code == 0x77) {
         flags ^= FLAG_NUM_LK;
     }
-    if (key_code.make_code == 0x11) {
+    if (key_code.extended_make_code == 0x11) {
         flags |= FLAG_RIGHT_ALT;
     }
-    if (key_code.break_code == 0x11) {
+    if (key_code.extended_break_code == 0x11) {
         flags &= ~FLAG_RIGHT_ALT;
     }
-    if (key_code.make_code == 0x14) {
+    if (key_code.extended_make_code == 0x14) {
         flags |= FLAG_RIGHT_CTRL;
     }
-    if (key_code.break_code == 0x14) {
+    if (key_code.extended_break_code == 0x14) {
         flags &= ~FLAG_RIGHT_CTRL;
     }
 }
@@ -291,18 +314,56 @@ unsigned char GetStackVolume() {
     return sp - keyboard_stack;
 }
 
-unsigned char parse(unsigned char keycode) {
+unsigned char ScancodeToAscii(unsigned char keycode) {
     if (flags & FLAG_CAPS_LOCK) {
-        if (flags & FLAG_LEFT_SHIFT) {
+        if (flags & FLAG_LEFT_SHIFT || flags & FLAG_RIGHT_SHIFT) {
             return ScancodeToAsciiTable_lowercase[keycode];
         }
         return ScancodeToAsciiTable_uppercase[keycode];
     }
-    if (flags & FLAG_LEFT_SHIFT) {
+    if (flags & FLAG_LEFT_SHIFT || flags & FLAG_RIGHT_SHIFT) {
         return ScancodeToAsciiTable_uppercase[keycode];
     }
     if (flags & FLAG_NUM_LK) {
         return ScancodeToAsciiTable_lowercase[keycode];
     }
+    if (keycode == 0x5A) {
+        return '\n'; //enter
+    }
+    if (keycode == 0x66) {
+        return '\b'; //backspace
+    }
+    if (keycode == 0x0D) {
+        return '\t'; //tab
+    }
+    if (keycode == 0x76) {
+        return '\e'; //esc
+    }
     return ScancodeToAsciiTable_lowercase[keycode];
+}
+
+unsigned char GetMakeCode() {
+    return key_code.make_code;
+}
+
+unsigned char GetBreakCode() {
+    return key_code.break_code;
+}
+
+unsigned char GetExtMakeCode() {
+    return key_code.extended_make_code;
+}
+
+
+unsigned char GetExtBreakCode() {
+    return key_code.extended_break_code;
+}
+
+// for testing the keyboard queue
+unsigned char GetKeyboardTail() {
+    return buffer_tail;
+}
+
+unsigned char CheckFlags() {
+    return flags;
 }

@@ -191,6 +191,13 @@ void draw_pixel(int x, int y, unsigned short color) {
     VGA[offset] = color;
 }
 
+// function to read a pixel from the screen and return its color
+unsigned char read_pixel(int x, int y) {
+	unsigned short offset = x + 320 * y;
+    unsigned char *VGA = (unsigned char *)VGA_FRAMEBUFFER;
+	unsigned char color = VGA[offset];
+	return color;
+}
 
 /**
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
@@ -321,3 +328,12 @@ void print_data(void * data, size_t size) {
 	terminal_write(ptr, size);
 }
 
+void clear_screen() { // technically doesn't really clear the screen so much as covering it in black.
+	for (int x = 0; x < 320; x++)
+	{
+		for (int y = 0; y < 200; y++)
+		{
+			draw_pixel(x, y, 0x00);
+		}
+	}	
+}  

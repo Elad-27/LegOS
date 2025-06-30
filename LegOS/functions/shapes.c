@@ -6,6 +6,13 @@
 #include <stddef.h>
 
 
+// Becuase of the nature of VGA 13h mode, translation in the x axis remains the same as in the cartesian plane (positive is to the right),
+// but going "forward" in the y axis actually goes down, (0,0) is in the top left and (320,200) is in the buttom right.
+// Therefor, when plotting a graph such as y = mx + n , it will actually look upside down.
+// (unless I actively deside to implament a more human-readable x-y plane where the (0,0) will be around the middle and going in the normal directions)
+// (but this is sort of moot concidering it will just make extra abstractions in places where we need as few as possible, best to save this to stuff like a graphing app in userspace)
+
+
 void draw_rectangle(int x, int y, int width, int height, unsigned short color) {
 	for (int i = 0; i < width; i++)
 	{
@@ -108,37 +115,16 @@ void fill_circle(int x, int y, int r, unsigned short color) {
  * * I think this also happens with other functions like the lines. Need to get to the buttom of this.   
 */
 
-
-void draw_line(double m, int n, unsigned short color) { // y = m*x + n
-	int x_end = 200 / m - n;
-	x_end = 320 ^ ((x_end ^ 320) & -(x_end < 320));
-	int y = 0;
-	for (int x = 0; x <= x_end; x++)
-	{
-		for (y = n; y <= 200; y++)
-		{
-			if (y == m * x + n)
-			{
-				draw_pixel(x, y, color);
-			}
-		}
-	}
-}// Becuase of the nature of VGA 13h mode, translation in the x axis remains the same as in the cartesian plane (positive is to the right),
- // but going "forward" in the y axis actually goes down, (0,0) is in the top left and (320,200) is in the buttom right.
- // Therefor, when plotting a graph such as y = mx + n , it will actually look upside down.
- // (unless I actively deside to implament a more human-readable x-y plane where the (0,0) will be around the middle and going in the normal directions)
- // (but this is sort of moot concidering it will just make extra abstractions in places where we need as few as possible, best to save this to stuff like a graphing app in userspace)
-
-void x_line(int x, unsigned short color) {
-	for (int y = 0; y < 200; y++)
+void x_line(unsigned char start, unsigned char height, unsigned short x, unsigned short color) {
+	for (unsigned char y = start; y < height; y++)
 	{
 		draw_pixel(x, y, color);
 	}
 	
 }
 
-void y_line(int y, unsigned short color) {
-	for (int x = 0; x < 320; x++)
+void y_line(unsigned short start, unsigned short width, unsigned char y, unsigned short color) {
+	for (unsigned short x = start; x < width; x++)
 	{
 		draw_pixel(x, y, color);
 	}
@@ -164,4 +150,26 @@ void fill_ellipse(int major_axis, int minor_axis, int x, int y, unsigned short c
 			}
 		}
 	}
+}
+
+void draw_line(int x0, int y0, int x1, int y1, unsigned short color) { //Bresenham’s Line Algorithm
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2; // error value
+
+    while (1) {
+        draw_pixel(x0, y0, color);
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+void draw_polygon(point_t points[], unsigned char color) {
+	
+}
+
+void fill_polygon(point_t points[], unsigned char color) {
+	
 }
