@@ -877,6 +877,9 @@ void whoami() {
 	write_string(user.username);
 	write_string("\n");
 	BumpX((strlen(user.username) + 4) * GetKeyWidth());
+}
+
+void magic8ball() {
 
 }
 
@@ -937,6 +940,13 @@ void terminal() {
 			else if (!strcmp(command, "quit")) {
 				quit();
 			}
+			else if (!strcmp(command, "rand")) {
+				unsigned char rand = random();
+				BumpX(-(strlen(user.username) + 4) * GetKeyWidth());
+				write_string(ToString(rand, "", 10));
+				write_char('\n');
+				BumpX((strlen(user.username) + 4) * GetKeyWidth());
+			}
 			else if (!strcmp(command, "help"))
 			{
 				BumpX(-(strlen(user.username) + 4) * GetKeyWidth());
@@ -979,5 +989,5 @@ void kernel_main(void)
 	loading_screen();
 	sel_usr();
 	terminal();
-	
+		
 }

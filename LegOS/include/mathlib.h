@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <float.h>
+#include "pit.h"
 
 #define math_Pi 3.141592653589793 //15 digits after the decimal, should be good enough.
 #define math_e	2.718281828459045 //might as well if I'm at it.
@@ -28,6 +29,7 @@ int sqrt(int square);
 int abs(int n);
 double powerof(double base, int power);
 double factorial(int num);
+unsigned char random();
 double __cos(double x, double y);
 double __sin(double x, double y, int iy);
 int __rem_pio2(double x, double *y);

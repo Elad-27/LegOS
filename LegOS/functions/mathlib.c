@@ -73,6 +73,11 @@ double powerof(double base, int power)
     return result;
 }
 
+unsigned char random() {
+	unsigned char rand = GetTicks() % 10;
+	return rand;
+}
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
 typedef union
